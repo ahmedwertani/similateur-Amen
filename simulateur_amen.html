@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+body { background: #F2F6FC; padding: 12px; }
+.header { background: #003087; color: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; }
+.header h2 { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+.header p { font-size: 11px; color: #85B7EB; }
+.ctrl { background: white; border: 1px solid #dce3ed; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+.ctrl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.ctrl-group label { font-size: 11px; color: #666; display: block; margin-bottom: 4px; }
+select { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; color: #222; }
+.slider-row { display: flex; align-items: center; gap: 8px; }
+.slider-row input[type=range] { flex: 1; }
+.slider-val { font-size: 13px; font-weight: bold; color: #003087; min-width: 20px; }
+.btn-add { width: 100%; background: #003087; color: white; border: none; border-radius: 6px; padding: 9px; font-size: 13px; font-weight: bold; cursor: pointer; }
+.btn-add:hover { background: #185FA5; }
+.scenario-list { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+.scenario-item { display: flex; align-items: center; justify-content: space-between; background: #EBF5FB; border-radius: 6px; padding: 6px 10px; }
+.scenario-item span { font-size: 12px; color: #003087; font-weight: bold; }
+.scenario-item .badge { background: #003087; color: white; border-radius: 99px; padding: 2px 8px; font-size: 11px; }
+.scenario-item .del { background: none; border: none; color: #999; cursor: pointer; font-size: 14px; font-weight: bold; }
+.empty { text-align: center; font-size: 12px; color: #aaa; padding: 10px 0; }
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.kpi { border-radius: 6px; padding: 10px 12px; }
+.kpi.blue { background: #EBF5FB; }
+.kpi.green { background: #E9F7EF; }
+.kpi.red { background: #FDEDEC; }
+.kpi-label { font-size: 10px; color: #666; margin-bottom: 3px; }
+.kpi-value { font-size: 22px; font-weight: bold; }
+.kpi.blue .kpi-value { color: #003087; }
+.kpi.green .kpi-value { color: #1E8449; }
+.kpi.red .kpi-value { color: #C00000; }
+.gauge-wrap { background: white; border: 1px solid #dce3ed; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+.gauge-label { font-size: 11px; color: #666; margin-bottom: 6px; }
+.gauge-bg { height: 12px; background: #eee; border-radius: 99px; overflow: hidden; }
+.gauge-fill { height: 100%; border-radius: 99px; background: #003087; transition: width 0.4s; }
+.gauge-ticks { display: flex; justify-content: space-between; font-size: 10px; color: #aaa; margin-top: 3px; }
+.obj-msg { text-align: center; font-size: 12px; font-weight: bold; padding: 7px; border-radius: 6px; margin-top: 8px; }
+.obj-ok { background: #E9F7EF; color: #1E8449; }
+.obj-nok { background: #EBF5FB; color: #003087; }
+.table-wrap { background: white; border: 1px solid #dce3ed; border-radius: 8px; overflow: hidden; }
+.table-title { font-size: 11px; font-weight: bold; color: #003087; padding: 8px 12px; border-bottom: 1px solid #dce3ed; }
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+th { background: #003087; color: white; padding: 6px 8px; text-align: left; }
+td { padding: 5px 8px; border-bottom: 1px solid #f0f0f0; color: #222; }
+tr:nth-child(even) td { background: #F7FAFD; }
+tr.modified td { background: #EBF5FB; }
+.badge-crit { background: #FDEDEC; color: #7F1010; border-radius: 99px; padding: 1px 6px; font-size: 10px; }
+.badge-haute { background: #FDEBD0; color: #784212; border-radius: 99px; padding: 1px 6px; font-size: 10px; }
+.badge-moy { background: #FEF9E7; color: #7D6608; border-radius: 99px; padding: 1px 6px; font-size: 10px; }
+.badge-sat { background: #E9F7EF; color: #1E8449; border-radius: 99px; padding: 1px 6px; font-size: 10px; }
+.btn-reset { float: right; background: none; border: 1px solid #ccc; border-radius: 5px; padding: 3px 8px; font-size: 11px; cursor: pointer; color: #666; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h2>Simulateur d'expansion strategique — Amen Bank</h2>
+  <p>Ajoutez des agences dans n'importe quels gouvernorats simultanement</p>
+</div>
+
+<div class="ctrl">
+  <div class="ctrl-row">
+    <div class="ctrl-group">
+      <label>Gouvernorat cible</label>
+      <select id="selGouv"></select>
+    </div>
+    <div class="ctrl-group">
+      <label>Nouvelles agences : <span id="sliderVal" style="font-weight:bold;color:#003087">1</span></label>
+      <div class="slider-row">
+        <input type="range" id="slider" min="1" max="10" step="1" value="1"
+          oninput="document.getElementById('sliderVal').textContent=this.value">
+      </div>
+    </div>
+  </div>
+  <button class="btn-add" onclick="addEntry()">+ Ajouter au scenario</button>
+  <div class="scenario-list" id="scenarioList">
+    <div class="empty" id="emptyMsg">Aucun gouvernorat selectionne</div>
+  </div>
+</div>
+
+<div class="kpi-grid" id="kpiGrid">
+  <div class="kpi blue">
+    <div class="kpi-label">Nouvelles agences</div>
+    <div class="kpi-value" id="kpiNew">0</div>
+  </div>
+  <div class="kpi blue">
+    <div class="kpi-label">Total agences Amen</div>
+    <div class="kpi-value" id="kpiTotal">162</div>
+  </div>
+  <div class="kpi green">
+    <div class="kpi-label">PDM nationale simulee</div>
+    <div class="kpi-value" id="kpiPDM">8.01%</div>
+  </div>
+  <div class="kpi green">
+    <div class="kpi-label">Gain PDM</div>
+    <div class="kpi-value" id="kpiGain">+0.00 pt</div>
+  </div>
+</div>
+
+<div class="gauge-wrap">
+  <div class="gauge-label">Progression vers l'objectif 12% de PDM nationale</div>
+  <div class="gauge-bg">
+    <div class="gauge-fill" id="gaugeFill" style="width:40%"></div>
+  </div>
+  <div class="gauge-ticks">
+    <span>0%</span>
+    <span id="gaugeSimVal" style="color:#003087;font-weight:bold">8.01%</span>
+    <span style="color:#1E8449;font-weight:bold">Objectif 12%</span>
+    <span>20%</span>
+  </div>
+  <div class="obj-msg obj-nok" id="objMsg">3.99% restant pour atteindre l'objectif 12%</div>
+</div>
+
+<div class="table-wrap">
+  <div class="table-title">
+    Tableau comparatif — 24 gouvernorats
+    <button class="btn-reset" onclick="resetAll()">Reinitialiser</button>
+  </div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Gouvernorat</th>
+          <th>Ag. act.</th>
+          <th>+Nouv.</th>
+          <th>Ag. sim.</th>
+          <th>PDM act.</th>
+          <th>PDM sim.</th>
+          <th>Gain</th>
+          <th>Zone act.</th>
+          <th>Zone sim.</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const TOTAL_AG_NATIONAL = 2023;
+const TOTAL_AMEN = 162;
+
+const DATA = [
+  {g:"Tunis",      ag:52, tot:465, pop:1084000, ent:148626},
+  {g:"Ariana",     ag:19, tot:141, pop:668000,  ent:60500},
+  {g:"Ben Arous",  ag:14, tot:158, pop:723000,  ent:57600},
+  {g:"Manouba",    ag:5,  tot:47,  pop:427000,  ent:22700},
+  {g:"Nabeul",     ag:13, tot:175, pop:875000,  ent:55000},
+  {g:"Zaghouan",   ag:2,  tot:23,  pop:192000,  ent:8500},
+  {g:"Bizerte",    ag:2,  tot:82,  pop:600000,  ent:38000},
+  {g:"Beja",       ag:2,  tot:34,  pop:303000,  ent:11600},
+  {g:"Jendouba",   ag:1,  tot:38,  pop:405000,  ent:13850},
+  {g:"Le Kef",     ag:2,  tot:30,  pop:258000,  ent:9800},
+  {g:"Siliana",    ag:2,  tot:27,  pop:226000,  ent:8600},
+  {g:"Sousse",     ag:12, tot:131, pop:752000,  ent:50000},
+  {g:"Monastir",   ag:8,  tot:104, pop:591000,  ent:39000},
+  {g:"Mahdia",     ag:5,  tot:57,  pop:411000,  ent:17500},
+  {g:"Sfax",       ag:14, tot:176, pop:1025000, ent:59892},
+  {g:"Kairouan",   ag:1,  tot:35,  pop:602000,  ent:26000},
+  {g:"Kasserine",  ag:2,  tot:50,  pop:468000,  ent:21400},
+  {g:"Sidi Bouzid",ag:2,  tot:52,  pop:449000,  ent:17814},
+  {g:"Gabes",      ag:4,  tot:48,  pop:374000,  ent:15800},
+  {g:"Medenine",   ag:5,  tot:64,  pop:497000,  ent:22900},
+  {g:"Tataouine",  ag:2,  tot:30,  pop:163000,  ent:7200},
+  {g:"Gafsa",      ag:2,  tot:48,  pop:370000,  ent:24000},
+  {g:"Tozeur",     ag:2,  tot:24,  pop:116000,  ent:5800},
+  {g:"Kebili",     ag:2,  tot:27,  pop:165000,  ent:7200}
+];
+
+let scenario = {};
+
+function getZone(pop, ent, ag) {
+  const ipt = (pop + ent) / (ag + 1);
+  if (ipt >= 241523) return "Tres Prioritaire";
+  if (ipt >= 168737) return "Prioritaire";
+  if (ipt >= 95914)  return "Satisfaisante";
+  return "Saturee";
+}
+
+function zoneBadge(z) {
+  if (z === "Tres Prioritaire") return '<span class="badge-crit">Tres Prioritaire</span>';
+  if (z === "Prioritaire")      return '<span class="badge-haute">Prioritaire</span>';
+  if (z === "Satisfaisante")    return '<span class="badge-moy">Satisfaisante</span>';
+  return '<span class="badge-sat">Saturee</span>';
+}
+
+function populate() {
+  const sel = document.getElementById('selGouv');
+  DATA.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d.g;
+    o.textContent = d.g;
+    sel.appendChild(o);
+  });
+}
+
+function addEntry() {
+  const g = document.getElementById('selGouv').value;
+  const n = parseInt(document.getElementById('slider').value);
+  scenario[g] = (scenario[g] || 0) + n;
+  render();
+}
+
+function removeEntry(g) {
+  delete scenario[g];
+  render();
+}
+
+function resetAll() {
+  scenario = {};
+  document.getElementById('slider').value = 1;
+  document.getElementById('sliderVal').textContent = '1';
+  render();
+}
+
+function render() {
+  const totalNew = Object.values(scenario).reduce((s, v) => s + v, 0);
+  const totalAmen = TOTAL_AMEN + totalNew;
+  const totalAll  = TOTAL_AG_NATIONAL + totalNew;
+  const pdmSim = totalAmen / totalAll * 100;
+  const pdmAct = TOTAL_AMEN / TOTAL_AG_NATIONAL * 100;
+  const gain   = pdmSim - pdmAct;
+
+  document.getElementById('kpiNew').textContent   = totalNew;
+  document.getElementById('kpiTotal').textContent = totalAmen;
+  document.getElementById('kpiPDM').textContent   = pdmSim.toFixed(2) + '%';
+  document.getElementById('kpiGain').textContent  = '+' + gain.toFixed(2) + ' pt';
+  document.getElementById('kpiGain').style.color  = gain > 0 ? '#1E8449' : '#003087';
+
+  const pct = Math.min(pdmSim / 20 * 100, 100);
+  document.getElementById('gaugeFill').style.width = pct + '%';
+  document.getElementById('gaugeSimVal').textContent = pdmSim.toFixed(2) + '%';
+
+  const objEl = document.getElementById('objMsg');
+  if (pdmSim >= 12) {
+    objEl.className = 'obj-msg obj-ok';
+    objEl.textContent = 'Objectif 12% atteint !';
+  } else {
+    objEl.className = 'obj-msg obj-nok';
+    objEl.textContent = (12 - pdmSim).toFixed(2) + '% restant pour atteindre l\'objectif 12%';
+  }
+
+  const listEl = document.getElementById('scenarioList');
+  const keys = Object.keys(scenario);
+  if (keys.length === 0) {
+    listEl.innerHTML = '<div class="empty" id="emptyMsg">Aucun gouvernorat selectionne</div>';
+  } else {
+    listEl.innerHTML = keys.map(g =>
+      `<div class="scenario-item">
+        <span>${g}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge">+${scenario[g]} agence${scenario[g] > 1 ? 's' : ''}</span>
+          <button class="del" onclick="removeEntry('${g}')">x</button>
+        </div>
+      </div>`
+    ).join('');
+  }
+
+  document.getElementById('tableBody').innerHTML = DATA.map(d => {
+    const nv    = scenario[d.g] || 0;
+    const agSim = d.ag + nv;
+    const totSim = d.tot + nv;
+    const pdmA  = (d.ag / d.tot * 100).toFixed(2) + '%';
+    const pdmS  = (agSim / totSim * 100).toFixed(2) + '%';
+    const g     = (agSim / totSim * 100 - d.ag / d.tot * 100).toFixed(2);
+    const gStr  = nv > 0 ? (g >= 0 ? '+' : '') + g + ' pt' : '—';
+    const zA    = getZone(d.pop, d.ent, d.ag);
+    const zS    = getZone(d.pop, d.ent, agSim);
+    const mod   = nv > 0 ? ' class="modified"' : '';
+    return `<tr${mod}>
+      <td><b>${d.g}</b>${nv > 0 ? ` <span style="background:#003087;color:white;border-radius:99px;padding:1px 6px;font-size:10px">+${nv}</span>` : ''}</td>
+      <td style="text-align:center">${d.ag}</td>
+      <td style="text-align:center;color:#003087;font-weight:bold">${nv > 0 ? '+' + nv : '—'}</td>
+      <td style="text-align:center;font-weight:${nv > 0 ? 'bold' : 'normal'}">${agSim}</td>
+      <td style="text-align:center">${pdmA}</td>
+      <td style="text-align:center;font-weight:${nv > 0 ? 'bold' : 'normal'};color:${nv > 0 ? '#003087' : 'inherit'}">${pdmS}</td>
+      <td style="text-align:center;color:${nv > 0 ? '#1E8449' : '#aaa'}">${gStr}</td>
+      <td>${zoneBadge(zA)}</td>
+      <td>${zoneBadge(zS)}</td>
+    </tr>`;
+  }).join('');
+}
+
+populate();
+render();
+</script>
+</body>
+</html>
